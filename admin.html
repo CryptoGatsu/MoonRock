@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="robots" content="noindex,nofollow"/>
+<title>Moon Rock Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,900&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+  :root{--bg:#050506;--panel:#0c0f17;--line:rgba(255,255,255,.09);--line2:rgba(255,255,255,.16);--text:#eef0f4;--muted:#9aa2b1;--em:#2ff7a0;--gold:#e9c07a;--danger:#ff5b46;--rock:#cfd3db}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',system-ui,sans-serif;min-height:100vh}
+  body::before{content:"";position:fixed;inset:0;z-index:-1;background:radial-gradient(900px 600px at 80% -10%,rgba(233,192,122,.08),transparent 55%),radial-gradient(900px 700px at 10% 10%,rgba(60,80,150,.12),transparent 55%),var(--bg)}
+  .wrap{max-width:1000px;margin:0 auto;padding:26px 20px 80px}
+  header{display:flex;align-items:center;gap:12px;padding:16px 0 24px;border-bottom:1px solid var(--line);margin-bottom:26px}
+  .dot{width:12px;height:12px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#e9edf4,#6b7280 60%,#20242e);box-shadow:0 0 12px rgba(200,210,230,.5)}
+  header h1{font-family:'Fraunces';font-weight:900;font-size:20px}header h1 b{color:var(--em)}
+  header .sp{margin-left:auto;display:flex;gap:10px;align-items:center}
+  .who{font-family:'JetBrains Mono';font-size:12px;color:var(--muted)}
+  .btn{border:1px solid var(--line2);background:rgba(255,255,255,.03);color:var(--text);border-radius:10px;padding:9px 14px;font-weight:700;font-size:13px;cursor:pointer;font-family:'Space Grotesk'}
+  .btn:active{transform:translateY(1px)}
+  .btn.em{background:linear-gradient(180deg,#38ffab,#12c47a);color:#04231a;border-color:transparent}
+  .btn.dz{border-color:rgba(255,91,70,.5);color:var(--danger)}
+  .btn.sm{padding:7px 11px;font-size:12px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px}
+  .login{max-width:380px;margin:8vh auto 0}
+  .login h2{font-family:'Fraunces';font-weight:900;font-size:26px;margin-bottom:6px}
+  .login p{color:var(--muted);font-size:13.5px;margin-bottom:18px}
+  .field{margin-bottom:12px}
+  .field label{display:block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+  .field input{width:100%;background:#0a0d13;border:1px solid var(--line);border-radius:10px;padding:12px;color:var(--text);font-size:14px;font-family:'Space Grotesk'}
+  .err{color:var(--danger);font-size:13px;min-height:18px;margin-top:6px}
+  .tabs{display:flex;gap:8px;margin-bottom:18px}
+  .tab{padding:9px 15px;border:1px solid var(--line);border-radius:100px;font-size:13px;color:var(--muted);cursor:pointer;background:rgba(255,255,255,.02)}
+  .tab.on{color:var(--em);border-color:rgba(47,247,160,.4)}
+  .tab b{font-family:'JetBrains Mono'}
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  @media(max-width:820px){.grid{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:520px){.grid{grid-template-columns:1fr}}
+  .m{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#0a0d13}
+  .m .im{aspect-ratio:1;background:#000}.m .im img{width:100%;height:100%;object-fit:cover;display:block}
+  .m .meta{padding:11px 12px;font-size:12px;color:var(--muted);font-family:'JetBrains Mono'}
+  .m .meta b{color:var(--rock)}
+  .m .acts{display:flex;gap:8px;padding:0 12px 12px}
+  .empty{grid-column:1/-1;text-align:center;color:var(--muted);padding:40px;border:1px dashed var(--line);border-radius:14px}
+  .note{color:#5a616f;font-size:12px;margin-top:20px}
+  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(16px);background:var(--panel);border:1px solid var(--em);border-radius:12px;padding:11px 16px;font-size:14px;opacity:0;transition:.2s;z-index:50}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <span class="dot"></span><h1>MOON <b>ROCK</b> Admin</h1>
+    <div class="sp" id="hdrSp"></div>
+  </header>
+
+  <div id="loginView" class="login card" style="display:none">
+    <h2>Curator sign in</h2>
+    <p>Sign in with your Moon Rock admin account to review and approve submitted memes.</p>
+    <div class="field"><label>Email</label><input id="email" type="email" autocomplete="username"/></div>
+    <div class="field"><label>Password</label><input id="password" type="password" autocomplete="current-password"/></div>
+    <button class="btn em" id="loginBtn" style="width:100%">Sign in</button>
+    <div class="err" id="loginErr"></div>
+  </div>
+
+  <div id="dash" style="display:none">
+    <div class="tabs">
+      <div class="tab on" data-tab="pending">Pending <b id="cntPending">0</b></div>
+      <div class="tab" data-tab="approved">Approved <b id="cntApproved">0</b></div>
+    </div>
+    <div class="grid" id="grid"></div>
+    <p class="note">Approving a meme makes it appear in the public gallery immediately. Deleting removes the submission for good.</p>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPA_URL='https://ygsyovxnxhgbpwjegxnu.supabase.co';
+const SUPA_KEY='sb_publishable_99SipwzzWOH-MUfqfqydYA_uxlquGHR';
+const SB=window.supabase.createClient(SUPA_URL,SUPA_KEY);
+const $=s=>document.querySelector(s);
+let all=[],tab='pending';
+function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(()=>e.classList.remove('show'),1800);}
+
+async function boot(){
+  const {data:{session}}=await SB.auth.getSession();
+  if(session)showDash(session);else showLogin();
+}
+function showLogin(){$('#loginView').style.display='block';$('#dash').style.display='none';$('#hdrSp').innerHTML='';}
+function showDash(session){
+  $('#loginView').style.display='none';$('#dash').style.display='block';
+  $('#hdrSp').innerHTML=`<span class="who">${session.user.email}</span><button class="btn sm" id="logoutBtn">Log out</button>`;
+  $('#logoutBtn').addEventListener('click',async()=>{await SB.auth.signOut();showLogin();});
+  load();
+}
+
+$('#loginBtn').addEventListener('click',async()=>{
+  const email=$('#email').value.trim(),password=$('#password').value;
+  $('#loginErr').textContent='';$('#loginBtn').disabled=true;$('#loginBtn').textContent='Signing in...';
+  const {data,error}=await SB.auth.signInWithPassword({email,password});
+  $('#loginBtn').disabled=false;$('#loginBtn').textContent='Sign in';
+  if(error){$('#loginErr').textContent=error.message;return;}
+  showDash(data.session);
+});
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&$('#loginView').style.display!=='none')$('#loginBtn').click();});
+
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));t.classList.add('on');tab=t.dataset.tab;renderGrid();}));
+
+async function load(){
+  const {data,error}=await SB.from('memes').select('*').order('created_at',{ascending:false});
+  if(error){toast('Load failed: '+error.message);return;}
+  all=data||[];
+  $('#cntPending').textContent=all.filter(m=>!m.approved).length;
+  $('#cntApproved').textContent=all.filter(m=>m.approved).length;
+  renderGrid();
+}
+function fmtDate(s){try{return new Date(s).toLocaleString();}catch(e){return '';}}
+function renderGrid(){
+  const g=$('#grid');g.innerHTML='';
+  const list=all.filter(m=>tab==='pending'?!m.approved:m.approved);
+  if(!list.length){g.innerHTML='<div class="empty">'+(tab==='pending'?'No memes waiting for review.':'No approved memes yet.')+'</div>';return;}
+  for(const m of list){
+    const el=document.createElement('div');el.className='m';
+    el.innerHTML=`<div class="im"><img src="${m.image_url}" alt="meme"/></div>
+      <div class="meta">${m.handle?'<b>'+m.handle+'</b> ':''}${m.caption?m.caption:''}<br><span style="opacity:.6">${fmtDate(m.created_at)}</span></div>
+      <div class="acts"></div>`;
+    const acts=el.querySelector('.acts');
+    if(!m.approved){
+      const ap=document.createElement('button');ap.className='btn em sm';ap.textContent='Approve';ap.onclick=()=>setApproved(m,true);acts.appendChild(ap);
+    }else{
+      const un=document.createElement('button');un.className='btn sm';un.textContent='Unapprove';un.onclick=()=>setApproved(m,false);acts.appendChild(un);
+    }
+    const del=document.createElement('button');del.className='btn dz sm';del.textContent='Delete';del.onclick=()=>del2(m);acts.appendChild(del);
+    g.appendChild(el);
+  }
+}
+async function setApproved(m,val){
+  const {error}=await SB.from('memes').update({approved:val}).eq('id',m.id);
+  if(error){toast('Failed: '+error.message);return;}
+  m.approved=val;toast(val?'Approved and live':'Moved back to pending');load();
+}
+async function del2(m){
+  if(!confirm('Delete this meme permanently?'))return;
+  // best effort: remove the stored file too
+  try{const mk='/storage/v1/object/public/memes/';const i=(m.image_url||'').indexOf(mk);if(i>=0){const path=m.image_url.slice(i+mk.length);await SB.storage.from('memes').remove([path]);}}catch(e){}
+  const {error}=await SB.from('memes').delete().eq('id',m.id);
+  if(error){toast('Failed: '+error.message);return;}
+  toast('Deleted');load();
+}
+boot();
+</script>
+</body>
+</html>
